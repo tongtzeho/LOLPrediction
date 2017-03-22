@@ -47,6 +47,7 @@ class Daiwan(object):
 				print ("Exception: "+username+" Update Token")
 		
 	def request_api_url(self, api_url):
+		err_time = 0
 		while True:
 			try:
 				headers = {'DAIWAN-API-TOKEN': self.token}
@@ -59,8 +60,10 @@ class Daiwan(object):
 					ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
 				return ret
 			except:
+				err_time += 1
 				print ("Exception: Internet")
 				time.sleep(1)
+				if err_time > 500: return {}
 		
 	def get_area(self):
 		return self.request_api_url('Area')
@@ -91,21 +94,7 @@ def parse_champion(champion):
 		print ('Exception: Parse Champion')
 	return result
 
-def parse_gamedetail(game_detail, champion_dict = None):
-	try:
-		result = [[], [], None, game_detail['data'][0]['battle']['start_time']]
-		for r in game_detail['data'][0]['battle']['gamer_records']:
-			if r['team'] == 100:
-				result[0].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
-			elif r['team'] == 200:
-				result[1].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
-			if champion_dict != None:
-				print (str(r['team'])+" "+str(champion_dict[r['champion_id']]))
-	except:
-		print ('Exception: Parse Game Detail')
-		return None
-	
-def write_playerinfo(area, qquin, info):
+def parse_playerinfo(info):
 	try:
 		record = [None, ['0', '0', '0', '0'], None, None, ['0', '0', '0', '0'], None, ['0', '0', '0', '0']]
 		# game_type 1 for normal
@@ -114,32 +103,36 @@ def write_playerinfo(area, qquin, info):
 		for battleinfo in info['data'][0]['batt_sum_info']:
 			if battleinfo['battle_type'] == 1 or battleinfo['battle_type'] == 4 or battleinfo['battle_type'] == 6:
 				record[battleinfo['battle_type']] = [str(battleinfo['total_num']), str(battleinfo['win_num']), str(battleinfo['lose_num']), str(battleinfo['leave_num'])]
-		fout = open(area+"/PlayerInfo/"+qquin+".txt", "w")
-		fout.write(record[1][0]+' '+record[1][1]+' '+record[1][2]+' '+record[1][3]+"\n")
-		fout.write(record[4][0]+' '+record[4][1]+' '+record[4][2]+' '+record[4][3]+"\n")
-		fout.write(record[6][0]+' '+record[6][1]+' '+record[6][2]+' '+record[6][3]+"\n")
-		fout.close()
-		print (area+' '+qquin+' Update Info')
+		return record
 	except:
-		print ('Exception: '+area+' '+qquin+' Update Info')
+		print ('Exception: Parse Info')	
+	
+def parse_gamedetail(game_detail):
+	try:
+		result = [[], [], None, game_detail['data'][0]['battle']['start_time']]
+		for r in game_detail['data'][0]['battle']['gamer_records']:
+			if r['team'] == 100:
+				result[0].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+			elif r['team'] == 200:
+				result[1].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+			# r['team'] = 100 for blue side, r['team'] = 200 for red side
+			# r['win'] = 2 for lose, r['win'] = 1 for win
+		result[2] = 2-result[0][0][3] # 1 for blue side win, 0 for red side win
+		return result
+	except:
+		print ('Exception: Parse Game Detail')
+		return None
 		
 def main_loop(area):
-	if not os.path.isfile(area+'/qquin.txt'):
-		print (area+' QQUIN File Not Found')
-		return
-	fin = open(area+'/qquin.txt')
-	qquin_set = set()
-	for line in fin:
-		qquin_set.add(line.replace('\r', "").replace('\n', ""))
-	crawler = Daiwan('Account.txt')
-	while True:
+	mysql = MySQL('root', 'pkuoslab', 'Area'+area)
+	qquin_set = mysql.get_qquin()
+	crawler = Daiwan('Account.txt')	
+	while len(qquin_set):
 		qquin_tuple = list(qquin_set)
 		random.shuffle(qquin_tuple)
 		qquin_tuple = tuple(qquin_tuple)
 		for qquin in qquin_tuple:
-			battle_summary_info = crawler.get_battlesummaryinfo(qquin, area)
-			write_playerinfo(area, qquin, battle_summary_info)
-			page = 0
+			mysql.update_playerinfo(area, qquin, parse_playerinfo(crawler.get_battlesummaryinfo(qquin, area)))
 			normal_gameid = [] # map = 11, type = 3, mode = 1
 			rank_gameid = [] # map = 11, type = 4, mode = 4
 			aram_gameid = [] # map = 12, type = 6, mode = 6
@@ -148,7 +141,6 @@ def main_loop(area):
 				try:
 					combat_list = crawler.get_combatlist(qquin, area, str(page))
 					if combat_list['data'][0]['list_num'] == 0: break
-					page += 1
 					expire = False
 					for battle in combat_list['data'][0]['battle_list']:
 						if int(time.mktime(time.strptime(battle['battle_time'], "%Y-%m-%d %H:%M:%S"))) < start_time:
@@ -163,16 +155,18 @@ def main_loop(area):
 				except:
 					print ('Exception: '+area+' '+qquin+' Get Combat List')
 					break
-			print (normal_gameid)
-			print (rank_gameid)
-			print (aram_gameid)
-			print (arurf_gameid)
-			
-			# 查询每页战绩
-				# 对每场比赛，如果模式符合，看是否已存在，如果不存在，查询比赛具体
-					# 把同场比赛的不在set里的玩家加进set且查询战绩
-			# 更新本地qquin.txt
-		return
+			for gameid in normal_gameid:
+				mysql.update_game('Normal', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+			for gameid in rank_gameid:
+				mysql.update_game('Rank', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+			for gameid in aram_gameid:
+				mysql.update_game('ARAM', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+			for gameid in arurf_gameid:
+				mysql.update_game('ARURF', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+			if (os.path.isfile('exit')):
+				print ('Process '+area+' Exit')
+				return
+	print ('Process '+area+' Has No qquin(s)')
 
 if True:
 	crawler = Daiwan('Account.txt')
@@ -180,18 +174,39 @@ if True:
 	qquin55k = 'U15681153143084694807'
 	qquintzh = 'U9426748735989830127'
 	qquinllg = 'U6894554802621839420'
-	gameidllga20 = '1282678561'
+	gameidllga20 = '1282183325'
 	#battle_summary_info = crawler.get_battlesummaryinfo(qquintzh, area)
 	#write_playerinfo(area, qquintzh, battle_summary_info)
 	#print (crawler.get_combatlist(qquinllg, area, '0'))
 	#print (crawler.get_combatlist(qquinllg, area, '1'))
 	#print (crawler.get_gamedetail(qquinllg, area, gameidllga20))
-	#champion_dict = parse_champion(crawler.get_champion())
+	champion_dict = parse_champion(crawler.get_champion())
 	#with open('champion.json', 'w') as outfile:  
 	#	json.dump(champion_dict, outfile, ensure_ascii=False)  
 	#	outfile.write('\n')
-	parse_gamedetail(crawler.get_gamedetail(qquinllg, area, gameidllga20), parse_champion(crawler.get_champion()))
+	game_detail = parse_gamedetail(crawler.get_gamedetail(qquinllg, area, gameidllga20), champion_dict)
+	print (game_detail)
 	exit()
 
 if __name__ == '__main__':	
-	main_loop('20')
+	#crawler = Daiwan('Account.txt')
+	#champion_dict = parse_champion(crawler.get_champion())
+	#with open('champion.json', 'w') as outfile:  
+	#	json.dump(champion_dict, outfile, ensure_ascii=False)
+	#	outfile.write('\n')
+	if not os.path.isfile('settings.txt'):
+		print ('"settings.txt" File Not Found')
+		exit()
+	fin = open('settings.txt', 'r')
+	data = fin.read()
+	param_list = data.split(' ')
+	for param in param_list:
+		if param == param_list[0]: continue
+		processes.append(multiprocessing.Process(target = main_loop, args = (param.replace('\r', '').replace('\n', ''),)))
+	for p in processes:
+		p.start()
+	main_loop(param_list[0].replace('\r', '').replace('\n', ''))
+	for p in processes:
+		p.join()
+	print ("All Processes Exit")
+	
