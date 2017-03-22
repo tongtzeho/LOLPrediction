@@ -1,8 +1,8 @@
 from selenium import webdriver
 import random, requests, json, time, re, multiprocessing, os, datetime
 
-start_time = int(time.mktime(time.strptime("2016-10-01 00:00:00", "%Y-%m-%d %H:%M:%S")))
-end_time = int(time.mktime(time.strptime("2016-10-07 00:00:00", "%Y-%m-%d %H:%M:%S")))
+start_time = int(time.mktime(time.strptime("2017-03-07 00:00:00", "%Y-%m-%d %H:%M:%S")))
+end_time = int(time.mktime(time.strptime("2017-03-09 00:00:00", "%Y-%m-%d %H:%M:%S")))
 
 class Daiwan(object):
 	"""docstring for Daiwan."""
@@ -65,6 +65,9 @@ class Daiwan(object):
 	def get_area(self):
 		return self.request_api_url('Area')
 		
+	def get_champion(self):
+		return self.request_api_url('champion')
+		
 	def get_userarea(self, keyword):
 		return self.request_api_url('UserArea?keyword='+keyword)
 		
@@ -73,7 +76,35 @@ class Daiwan(object):
 	
 	def get_combatlist(self, qquin, area, page):
 		return self.request_api_url('CombatList?qquin='+qquin+'+&vaid='+area+'&p='+page) # 0..49
+	
+	def get_gamedetail(self, qquin, area, gameid):
+		return self.request_api_url('GameDetail?qquin='+qquin+'&vaid='+area+'&gameid='+gameid)
 
+def parse_champion(champion):
+	result = {}
+	i = 0
+	try:
+		for c in champion['data']:
+			result[c['id']] = (i, c['ename'])
+			i += 1
+	except:
+		print ('Exception: Parse Champion')
+	return result
+
+def parse_gamedetail(game_detail, champion_dict = None):
+	try:
+		result = [[], [], None, game_detail['data'][0]['battle']['start_time']]
+		for r in game_detail['data'][0]['battle']['gamer_records']:
+			if r['team'] == 100:
+				result[0].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+			elif r['team'] == 200:
+				result[1].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+			if champion_dict != None:
+				print (str(r['team'])+" "+str(champion_dict[r['champion_id']]))
+	except:
+		print ('Exception: Parse Game Detail')
+		return None
+	
 def write_playerinfo(area, qquin, info):
 	try:
 		record = [None, ['0', '0', '0', '0'], None, None, ['0', '0', '0', '0'], None, ['0', '0', '0', '0']]
@@ -91,7 +122,6 @@ def write_playerinfo(area, qquin, info):
 		print (area+' '+qquin+' Update Info')
 	except:
 		print ('Exception: '+area+' '+qquin+' Update Info')
-	
 		
 def main_loop(area):
 	if not os.path.isfile(area+'/qquin.txt'):
@@ -110,16 +140,16 @@ def main_loop(area):
 			battle_summary_info = crawler.get_battlesummaryinfo(qquin, area)
 			write_playerinfo(area, qquin, battle_summary_info)
 			page = 0
+			normal_gameid = [] # map = 11, type = 3, mode = 1
+			rank_gameid = [] # map = 11, type = 4, mode = 4
+			aram_gameid = [] # map = 12, type = 6, mode = 6
+			arurf_gameid = [] # map = 11, type = 3, mode = 24
 			while True:
-				#try:
+				try:
 					combat_list = crawler.get_combatlist(qquin, area, str(page))
 					if combat_list['data'][0]['list_num'] == 0: break
 					page += 1
 					expire = False
-					normal_gameid = [] # map = 11, type = 3, mode = 1
-					rank_gameid = [] # map = 11, type = 4, mode = 4
-					aram_gameid = [] # map = 12, type = 6, mode = 6
-					arurf_gameid = [] # map = 11, type = 3, mode = 24
 					for battle in combat_list['data'][0]['battle_list']:
 						if int(time.mktime(time.strptime(battle['battle_time'], "%Y-%m-%d %H:%M:%S"))) < start_time:
 							expire = True
@@ -129,30 +159,38 @@ def main_loop(area):
 							elif battle['battle_map'] == 11 and battle['game_type'] == 4 and battle['game_mode'] == 4: rank_gameid.append(str(battle['game_id']))
 							elif battle['battle_map'] == 12 and battle['game_type'] == 6 and battle['game_mode'] == 6: aram_gameid.append(str(battle['game_id']))
 							elif battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 24: arurf_gameid.append(str(battle['game_id']))
-					print (normal_gameid)
-					print (rank_gameid)
-					print (aram_gameid)
-					print (arurf_gameid)
 					if expire: break
-				#except:
-				#	print ('Exception: '+area+' '+qquin+' Get Combat List')
-				#	break
+				except:
+					print ('Exception: '+area+' '+qquin+' Get Combat List')
+					break
+			print (normal_gameid)
+			print (rank_gameid)
+			print (aram_gameid)
+			print (arurf_gameid)
+			
 			# 查询每页战绩
 				# 对每场比赛，如果模式符合，看是否已存在，如果不存在，查询比赛具体
 					# 把同场比赛的不在set里的玩家加进set且查询战绩
 			# 更新本地qquin.txt
 		return
 
-if False:
+if True:
 	crawler = Daiwan('Account.txt')
 	area = '20'
 	qquin55k = 'U15681153143084694807'
 	qquintzh = 'U9426748735989830127'
 	qquinllg = 'U6894554802621839420'
+	gameidllga20 = '1282678561'
 	#battle_summary_info = crawler.get_battlesummaryinfo(qquintzh, area)
 	#write_playerinfo(area, qquintzh, battle_summary_info)
-	print (crawler.get_combatlist(qquinllg, area, '0'))
-	print (crawler.get_combatlist(qquinllg, area, '1'))
+	#print (crawler.get_combatlist(qquinllg, area, '0'))
+	#print (crawler.get_combatlist(qquinllg, area, '1'))
+	#print (crawler.get_gamedetail(qquinllg, area, gameidllga20))
+	#champion_dict = parse_champion(crawler.get_champion())
+	#with open('champion.json', 'w') as outfile:  
+	#	json.dump(champion_dict, outfile, ensure_ascii=False)  
+	#	outfile.write('\n')
+	parse_gamedetail(crawler.get_gamedetail(qquinllg, area, gameidllga20), parse_champion(crawler.get_champion()))
 	exit()
 
 if __name__ == '__main__':	
