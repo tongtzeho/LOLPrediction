@@ -5,7 +5,6 @@ start_time = int(time.mktime(time.strptime("2017-03-07 00:00:00", "%Y-%m-%d %H:%
 end_time = int(time.mktime(time.strptime("2017-03-09 00:00:00", "%Y-%m-%d %H:%M:%S")))
 
 class Daiwan(object):
-	"""docstring for Daiwan."""
 
 	BASE_URL = 'http://lolapi.games-cube.com/'
 
@@ -83,6 +82,38 @@ class Daiwan(object):
 	def get_gamedetail(self, qquin, area, gameid):
 		return self.request_api_url('GameDetail?qquin='+qquin+'&vaid='+area+'&gameid='+gameid)
 
+class Mysql(object):
+	
+	host = 'localhost'
+	port = 3306
+	user = ''
+	password = ''
+	database = 'LOL_Prediction'
+	charset = 'utf-8'
+	
+	def __init__(self, user, password):
+		self.user = user
+		self.password = password
+		
+	def connect(self):
+		try:
+			conn = pymysql.connect(host=self.host, port=self.port, user=self.user, password=self.password, db=self.database, charset=self.charset)
+			return conn
+		except:
+			print ('Exception: MySQL Connection')
+			time.sleep(1)
+			return None
+			
+	def update_playerinfo(self, area, qquin, playerinfo):
+		try:
+			if playerinfo[0] == None:
+				print ('Failed: Update '+area+qquin+' Player Info')
+				return False
+			# 查询Player表中有没有此人。如果有，则update。如果没有，则insert
+		except:
+			print ('Exception: Update '+area+qquin+' Player Info')
+			return False
+		
 def parse_champion(champion):
 	result = {}
 	i = 0
@@ -96,13 +127,14 @@ def parse_champion(champion):
 
 def parse_playerinfo(info):
 	try:
-		record = [None, ['0', '0', '0', '0'], None, None, ['0', '0', '0', '0'], None, ['0', '0', '0', '0']]
+		record = [None, None, None, None]
 		# game_type 1 for normal
 		# game_type 4 for S7 solo-rank
 		# game_type 6 for ARAM
 		for battleinfo in info['data'][0]['batt_sum_info']:
-			if battleinfo['battle_type'] == 1 or battleinfo['battle_type'] == 4 or battleinfo['battle_type'] == 6:
-				record[battleinfo['battle_type']] = [str(battleinfo['total_num']), str(battleinfo['win_num']), str(battleinfo['lose_num']), str(battleinfo['leave_num'])]
+			if battleinfo['battle_type'] == 6:
+				record = [str(battleinfo['total_num']), str(battleinfo['win_num']), str(battleinfo['lose_num']), str(battleinfo['leave_num'])]
+				break
 		return record
 	except:
 		print ('Exception: Parse Info')	
@@ -112,9 +144,9 @@ def parse_gamedetail(game_detail):
 		result = [[], [], None, game_detail['data'][0]['battle']['start_time']]
 		for r in game_detail['data'][0]['battle']['gamer_records']:
 			if r['team'] == 100:
-				result[0].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+				result[0].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
 			elif r['team'] == 200:
-				result[1].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['team'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+				result[1].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
 			# r['team'] = 100 for blue side, r['team'] = 200 for red side
 			# r['win'] = 2 for lose, r['win'] = 1 for win
 		result[2] = 2-result[0][0][3] # 1 for blue side win, 0 for red side win
@@ -124,7 +156,7 @@ def parse_gamedetail(game_detail):
 		return None
 		
 def main_loop(area):
-	mysql = MySQL('root', 'pkuoslab', 'Area'+area)
+	mysql = MySQL('root', 'pkuoslab')
 	qquin_set = mysql.get_qquin()
 	crawler = Daiwan('Account.txt')	
 	while len(qquin_set):
@@ -156,19 +188,19 @@ def main_loop(area):
 					print ('Exception: '+area+' '+qquin+' Get Combat List')
 					break
 			for gameid in normal_gameid:
-				mysql.update_game('Normal', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+				mysql.update_game('Normal', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
 			for gameid in rank_gameid:
-				mysql.update_game('Rank', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+				mysql.update_game('Rank', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
 			for gameid in aram_gameid:
-				mysql.update_game('ARAM', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+				mysql.update_game('ARAM', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
 			for gameid in arurf_gameid:
-				mysql.update_game('ARURF', gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
+				mysql.update_game('ARURF', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
 			if (os.path.isfile('exit')):
 				print ('Process '+area+' Exit')
 				return
 	print ('Process '+area+' Has No qquin(s)')
 
-if True:
+if False:
 	crawler = Daiwan('Account.txt')
 	area = '20'
 	qquin55k = 'U15681153143084694807'
