@@ -1,5 +1,5 @@
 from selenium import webdriver
-import random, requests, json, time, re, multiprocessing, os, datetime
+import pymysql, random, requests, json, time, re, multiprocessing, os, datetime
 
 start_time = int(time.mktime(time.strptime("2017-03-07 00:00:00", "%Y-%m-%d %H:%M:%S")))
 end_time = int(time.mktime(time.strptime("2017-03-09 00:00:00", "%Y-%m-%d %H:%M:%S")))
@@ -82,14 +82,14 @@ class Daiwan(object):
 	def get_gamedetail(self, qquin, area, gameid):
 		return self.request_api_url('GameDetail?qquin='+qquin+'&vaid='+area+'&gameid='+gameid)
 
-class Mysql(object):
+class MySQL(object):
 	
 	host = 'localhost'
 	port = 3306
 	user = ''
 	password = ''
 	database = 'LOL_Prediction'
-	charset = 'utf-8'
+	charset = 'utf8'
 	
 	def __init__(self, user, password):
 		self.user = user
@@ -103,7 +103,31 @@ class Mysql(object):
 			print ('Exception: MySQL Connection')
 			time.sleep(1)
 			return None
-			
+	
+	def get_qquin(self, area):
+		conn = self.connect()
+		if (conn == None): return set()
+		cursor = conn.cursor()
+		try:
+			ifexists = cursor.execute("select qquin from player where area = "+area)		
+			if ifexists == 0:
+				cursor.close()
+				conn.close()
+				return set()
+			else:
+				result_set = cursor.fetchall()
+				cursor.close()
+				conn.close()
+				qquin_set = set()
+				for s in result_set:
+					qquin_set.add(s[0])
+				return qquin_set
+		except:
+			print ('Exception: Get QQUIN From MySQL')
+			cursor.close()
+			conn.close()
+			return set()
+	
 	def update_playerinfo(self, area, qquin, playerinfo):
 		try:
 			if playerinfo[0] == None:
@@ -157,12 +181,14 @@ def parse_gamedetail(game_detail):
 		
 def main_loop(area):
 	mysql = MySQL('root', 'pkuoslab')
-	qquin_set = mysql.get_qquin()
+	qquin_set = mysql.get_qquin(area)
 	crawler = Daiwan('Account.txt')	
 	while len(qquin_set):
 		qquin_tuple = list(qquin_set)
 		random.shuffle(qquin_tuple)
 		qquin_tuple = tuple(qquin_tuple)
+		#print (qquin_tuple)
+		#return
 		for qquin in qquin_tuple:
 			mysql.update_playerinfo(area, qquin, parse_playerinfo(crawler.get_battlesummaryinfo(qquin, area)))
 			normal_gameid = [] # map = 11, type = 3, mode = 1
@@ -200,26 +226,6 @@ def main_loop(area):
 				return
 	print ('Process '+area+' Has No qquin(s)')
 
-if False:
-	crawler = Daiwan('Account.txt')
-	area = '20'
-	qquin55k = 'U15681153143084694807'
-	qquintzh = 'U9426748735989830127'
-	qquinllg = 'U6894554802621839420'
-	gameidllga20 = '1282183325'
-	#battle_summary_info = crawler.get_battlesummaryinfo(qquintzh, area)
-	#write_playerinfo(area, qquintzh, battle_summary_info)
-	#print (crawler.get_combatlist(qquinllg, area, '0'))
-	#print (crawler.get_combatlist(qquinllg, area, '1'))
-	#print (crawler.get_gamedetail(qquinllg, area, gameidllga20))
-	champion_dict = parse_champion(crawler.get_champion())
-	#with open('champion.json', 'w') as outfile:  
-	#	json.dump(champion_dict, outfile, ensure_ascii=False)  
-	#	outfile.write('\n')
-	game_detail = parse_gamedetail(crawler.get_gamedetail(qquinllg, area, gameidllga20), champion_dict)
-	print (game_detail)
-	exit()
-
 if __name__ == '__main__':	
 	#crawler = Daiwan('Account.txt')
 	#champion_dict = parse_champion(crawler.get_champion())
@@ -232,6 +238,7 @@ if __name__ == '__main__':
 	fin = open('settings.txt', 'r')
 	data = fin.read()
 	param_list = data.split(' ')
+	processes = []
 	for param in param_list:
 		if param == param_list[0]: continue
 		processes.append(multiprocessing.Process(target = main_loop, args = (param.replace('\r', '').replace('\n', ''),)))
@@ -241,4 +248,3 @@ if __name__ == '__main__':
 	for p in processes:
 		p.join()
 	print ("All Processes Exit")
-	
