@@ -109,7 +109,7 @@ class MySQL(object):
 		if (conn == None): return set()
 		cursor = conn.cursor()
 		try:
-			ifexists = cursor.execute("select qquin from player where area = "+area)		
+			ifexists = cursor.execute("select qquin from Player where area = "+area)		
 			if ifexists == 0:
 				cursor.close()
 				conn.close()
@@ -129,13 +129,30 @@ class MySQL(object):
 			return set()
 	
 	def update_playerinfo(self, area, qquin, playerinfo):
+		conn = self.connect()
+		if (conn == None): return False
+		cursor = conn.cursor()
 		try:
 			if playerinfo[0] == None:
 				print ('Failed: Update '+area+qquin+' Player Info')
 				return False
-			# 查询Player表中有没有此人。如果有，则update。如果没有，则insert
+			ifexists = cursor.execute("select area,qquin from Player where area="+area+" and qquin='"+qquin+"'")
+			if ifexitsts == 0:
+				cursor.execute("insert into Player (area,qquin,aram_game,aram_win,aram_lose,aram_leave) values ("+area+",'"+qquin+"',"+playerinfo[0]+","+playerinfo[1]+","+playerinfo[2]+","+playerinfo[3]+")")
+				conn.commit()
+				cursor.close()
+				conn.close()
+				return True
+			else:
+				cursor.execute("update Player set aram_game="+playerinfo[0]+", aram_win="+playerinfo[1]+", aram_lost="+playerinfo[2]+", aram_leave="+playerinfo[3]+" where area="+area+" and qquin='"+qquin+"'")
+				conn.commit()
+				cursor.close()
+				conn.close()
+				return True
 		except:
 			print ('Exception: Update '+area+qquin+' Player Info')
+			cursor.close()
+			conn.close()
 			return False
 		
 def parse_champion(champion):
@@ -187,8 +204,6 @@ def main_loop(area):
 		qquin_tuple = list(qquin_set)
 		random.shuffle(qquin_tuple)
 		qquin_tuple = tuple(qquin_tuple)
-		#print (qquin_tuple)
-		#return
 		for qquin in qquin_tuple:
 			mysql.update_playerinfo(area, qquin, parse_playerinfo(crawler.get_battlesummaryinfo(qquin, area)))
 			normal_gameid = [] # map = 11, type = 3, mode = 1
