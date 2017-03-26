@@ -1,8 +1,8 @@
 from selenium import webdriver
 import pymysql, random, requests, json, time, re, multiprocessing, os, datetime
 
-start_time = int(time.mktime(time.strptime("2017-03-07 00:00:00", "%Y-%m-%d %H:%M:%S")))
-end_time = int(time.mktime(time.strptime("2017-03-09 00:00:00", "%Y-%m-%d %H:%M:%S")))
+start_time = "2017-03-01 00:00:00"
+end_time = "2017-03-16 00:00:00"
 
 class Daiwan(object):
 
@@ -57,6 +57,10 @@ class Daiwan(object):
 					self.update_token(self.account[self.account_id][0], self.account[self.account_id][1])
 					headers = {'DAIWAN-API-TOKEN': self.token}
 					ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
+				while (str(ret).startswith('API calls quota exceeded!')):
+					print ("API Waiting CD")
+					time.sleep(60)
+					ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
 				return ret
 			except:
 				err_time += 1
@@ -88,7 +92,7 @@ class MySQL(object):
 	port = 3306
 	user = ''
 	password = ''
-	database = 'LOL_Prediction'
+	database = 'lol_prediction'
 	charset = 'utf8'
 	
 	def __init__(self, user, password):
@@ -109,7 +113,7 @@ class MySQL(object):
 		if (conn == None): return set()
 		cursor = conn.cursor()
 		try:
-			ifexists = cursor.execute("select qquin from Player where area = "+area)		
+			ifexists = cursor.execute("select qquin from player where area = "+area)		
 			if ifexists == 0:
 				cursor.close()
 				conn.close()
@@ -134,23 +138,93 @@ class MySQL(object):
 		cursor = conn.cursor()
 		try:
 			if playerinfo[0] == None:
-				print ('Failed: Update '+area+qquin+' Player Info')
+				print ('Failed: Update '+area+'-'+qquin+' Player Info')
 				return False
-			ifexists = cursor.execute("select area,qquin from Player where area="+area+" and qquin='"+qquin+"'")
-			if ifexitsts == 0:
-				cursor.execute("insert into Player (area,qquin,aram_game,aram_win,aram_lose,aram_leave) values ("+area+",'"+qquin+"',"+playerinfo[0]+","+playerinfo[1]+","+playerinfo[2]+","+playerinfo[3]+")")
+			ifexists = cursor.execute("select area,qquin from player where area="+area+" and qquin='"+qquin+"'")
+			if ifexists == 0:
+				cursor.execute("insert into player (area,qquin,aram_game,aram_win,aram_lose,aram_leave) values ("+area+",'"+qquin+"',"+playerinfo[0]+","+playerinfo[1]+","+playerinfo[2]+","+playerinfo[3]+")")
 				conn.commit()
 				cursor.close()
 				conn.close()
+				print (area+'-'+qquin+' : New Player')
 				return True
 			else:
-				cursor.execute("update Player set aram_game="+playerinfo[0]+", aram_win="+playerinfo[1]+", aram_lost="+playerinfo[2]+", aram_leave="+playerinfo[3]+" where area="+area+" and qquin='"+qquin+"'")
+				cursor.execute("update player set aram_game="+playerinfo[0]+", aram_win="+playerinfo[1]+", aram_lose="+playerinfo[2]+", aram_leave="+playerinfo[3]+" where area="+area+" and qquin='"+qquin+"'")
 				conn.commit()
 				cursor.close()
 				conn.close()
+				print (area+'-'+qquin+' : Update Player Info')
 				return True
 		except:
-			print ('Exception: Update '+area+qquin+' Player Info')
+			print ('Exception: Update '+area+'-'+qquin+' Player Info')
+			cursor.close()
+			conn.close()
+			return False
+			
+	def update_playername(self, area, qquin, name, nametime):
+		conn = self.connect()
+		if (conn == None): return False
+		cursor = conn.cursor()
+		try:
+			ifexists = cursor.execute("select area,qquin,name,nametime from player where area="+area+" and qquin='"+qquin+"'")
+			if ifexists == 0:
+				cursor.execute("insert into player (area,qquin,name,nametime) values ("+area+",'"+qquin+"','"+name+"','"+nametime+"')")
+				conn.commit()
+				cursor.close()
+				conn.close()
+				print (area+'-'+qquin+' : New Player')
+				return True
+			else:
+				select_result = cursor.fetchall()[0]
+				if select_result[3] == None or (str(select_result[2]) != name and str(select_result[3]) < nametime):
+					cursor.execute("update player set name='"+name+"', nametime='"+nametime+"' where area="+area+" and qquin='"+qquin+"'")
+					conn.commit()
+					print (area+'-'+qquin+' : Update Player Name '+name)
+				cursor.close()
+				conn.close()				
+				return True
+		except:
+			print ('Exception: Update '+area+'-'+qquin+' Player Name')
+			cursor.close()
+			conn.close()
+			return False
+			
+	def search_game(self, mode, area, gameid):
+		conn = self.connect()
+		if (conn == None): return -1
+		cursor = conn.cursor()
+		try:
+			ifexists = cursor.execute("select area,gameid from game_"+mode+" where area="+area+" and gameid="+gameid)
+			cursor.close()
+			conn.close()
+			return ifexists
+		except:
+			print ('Exception: Search '+area+'-'+gameid)
+			cursor.close()
+			conn.close()
+			return -1
+			
+	def insert_game(self, mode, area, gameid, detail):
+		conn = self.connect()
+		if (conn == None): return False
+		cursor = conn.cursor()
+		try:
+			if detail == None or detail[2] == None:
+				print ('Failed: Insert '+area+'-'+gameid+' Game Detail')
+				return False
+			cmd = "insert into game_"+mode+" values ("+area+","+gameid+",'"+detail[3]+"',"+str(detail[2])
+			for i in range(0, 5):
+				cmd += ",'"+detail[0][i][0]+"',"+detail[0][i][2]+","+detail[0][i][4]+","+detail[0][i][5]+","+detail[0][i][6]+","+detail[0][i][7]
+			for i in range(0, 5):
+				cmd += ",'"+detail[1][i][0]+"',"+detail[1][i][2]+","+detail[1][i][4]+","+detail[1][i][5]+","+detail[1][i][6]+","+detail[1][i][7]
+			cmd += ")"
+			cursor.execute(cmd)
+			conn.commit()
+			cursor.close()
+			conn.close()
+			return True			
+		except:
+			print ('Exception: Insert '+area+'-'+gameid)
 			cursor.close()
 			conn.close()
 			return False
@@ -178,16 +252,17 @@ def parse_playerinfo(info):
 				break
 		return record
 	except:
-		print ('Exception: Parse Info')	
+		print ('Exception: Parse Player Info')	
+		return [None]
 	
 def parse_gamedetail(game_detail):
 	try:
 		result = [[], [], None, game_detail['data'][0]['battle']['start_time']]
 		for r in game_detail['data'][0]['battle']['gamer_records']:
 			if r['team'] == 100:
-				result[0].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+				result[0].append((r['qquin'], r['name'], str(r['champion_id']), r['win'], str(r['champions_killed']), str(r['num_deaths']), str(r['assists']), str(r['total_damage_dealt_to_champions'])))
 			elif r['team'] == 200:
-				result[1].append((r['qquin'], r['name'], r['champion_id'], r['win'], r['champions_killed'], r['num_deaths'], r['assists'], r['total_damage_dealt_to_champions']))
+				result[1].append((r['qquin'], r['name'], str(r['champion_id']), r['win'], str(r['champions_killed']), str(r['num_deaths']), str(r['assists']), str(r['total_damage_dealt_to_champions'])))
 			# r['team'] = 100 for blue side, r['team'] = 200 for red side
 			# r['win'] = 2 for lose, r['win'] = 1 for win
 		result[2] = 2-result[0][0][3] # 1 for blue side win, 0 for red side win
@@ -199,7 +274,7 @@ def parse_gamedetail(game_detail):
 def main_loop(area):
 	mysql = MySQL('root', 'pkuoslab')
 	qquin_set = mysql.get_qquin(area)
-	crawler = Daiwan('Account.txt')	
+	crawler = Daiwan('Account.txt')
 	while len(qquin_set):
 		qquin_tuple = list(qquin_set)
 		random.shuffle(qquin_tuple)
@@ -210,35 +285,45 @@ def main_loop(area):
 			rank_gameid = [] # map = 11, type = 4, mode = 4
 			aram_gameid = [] # map = 12, type = 6, mode = 6
 			arurf_gameid = [] # map = 11, type = 3, mode = 24
+			page = 0
 			while True:
 				try:
 					combat_list = crawler.get_combatlist(qquin, area, str(page))
 					if combat_list['data'][0]['list_num'] == 0: break
 					expire = False
 					for battle in combat_list['data'][0]['battle_list']:
-						if int(time.mktime(time.strptime(battle['battle_time'], "%Y-%m-%d %H:%M:%S"))) < start_time:
+						if battle['battle_time'] < start_time:
 							expire = True
 							break
-						if int(time.mktime(time.strptime(battle['battle_time'], "%Y-%m-%d %H:%M:%S"))) <= end_time:
+						if battle['battle_time'] <= end_time:
 							if battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 1: normal_gameid.append(str(battle['game_id']))
 							elif battle['battle_map'] == 11 and battle['game_type'] == 4 and battle['game_mode'] == 4: rank_gameid.append(str(battle['game_id']))
 							elif battle['battle_map'] == 12 and battle['game_type'] == 6 and battle['game_mode'] == 6: aram_gameid.append(str(battle['game_id']))
 							elif battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 24: arurf_gameid.append(str(battle['game_id']))
 					if expire: break
+					page += 1
 				except:
-					print ('Exception: '+area+' '+qquin+' Get Combat List')
+					print ('Exception: '+area+'-'+qquin+' Get Combat List')
 					break
-			for gameid in normal_gameid:
-				mysql.update_game('Normal', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
-			for gameid in rank_gameid:
-				mysql.update_game('Rank', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
-			for gameid in aram_gameid:
-				mysql.update_game('ARAM', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
-			for gameid in arurf_gameid:
-				mysql.update_game('ARURF', area, gameid, parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid)), qquin_set)
-			if (os.path.isfile('exit')):
-				print ('Process '+area+' Exit')
-				return
+			mode_list = {'normal': normal_gameid, 'rank': rank_gameid, 'aram': aram_gameid, 'arurf': arurf_gameid}
+			for gamemode, gameidlist in mode_list.items():
+				for gameid in gameidlist:
+					if (os.path.isfile('exit')):
+						print ('Process '+area+' Exit')
+						return
+					if mysql.search_game(gamemode, area, gameid) == 0:
+						detail = parse_gamedetail(crawler.get_gamedetail(qquin, area, gameid))
+						mysql.insert_game(gamemode, area, gameid, detail)
+						try:
+							for i in range(0, 2):
+								for j in range(0, 5):
+									if not (detail[i][j][0] in qquin_set):
+										mysql.update_playerinfo(area, detail[i][j][0], parse_playerinfo(crawler.get_battlesummaryinfo(detail[i][j][0], area)))
+										qquin_set.add(detail[i][j][0])
+									mysql.update_playername(area, detail[i][j][0], detail[i][j][1], detail[3])
+						except:
+							print ('Exception: '+area+'-'+gameid+' Update Other Player')
+							continue
 	print ('Process '+area+' Has No qquin(s)')
 
 if __name__ == '__main__':	
@@ -247,6 +332,7 @@ if __name__ == '__main__':
 	#with open('champion.json', 'w') as outfile:  
 	#	json.dump(champion_dict, outfile, ensure_ascii=False)
 	#	outfile.write('\n')
+	if os.path.isfile('exit'): os.remove('exit')
 	if not os.path.isfile('settings.txt'):
 		print ('"settings.txt" File Not Found')
 		exit()
