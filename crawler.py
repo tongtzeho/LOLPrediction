@@ -172,16 +172,16 @@ class MySQL(object):
 				conn.commit()
 				cursor.close()
 				conn.close()
-				print (area+'-'+qquin+' : New Player')
+				print (area+'-'+qquin+' : New Player '+name)
 				return True
 			else:
 				select_result = cursor.fetchall()[0]
 				if select_result[3] == None or (str(select_result[2]) != name and str(select_result[3]) < nametime):
 					cursor.execute("update player set name='"+name+"', nametime='"+nametime+"' where area="+area+" and qquin='"+qquin+"'")
 					conn.commit()
-					print (area+'-'+qquin+' : Update Player Name '+name)
 				cursor.close()
-				conn.close()				
+				conn.close()
+				print (area+'-'+qquin+' : Update Player Name '+name)				
 				return True
 		except:
 			print ('Exception: Update '+area+'-'+qquin+' Player Name')
@@ -317,9 +317,7 @@ def main_loop(area):
 						try:
 							for i in range(0, 2):
 								for j in range(0, 5):
-									if not (detail[i][j][0] in qquin_set):
-										mysql.update_playerinfo(area, detail[i][j][0], parse_playerinfo(crawler.get_battlesummaryinfo(detail[i][j][0], area)))
-										qquin_set.add(detail[i][j][0])
+									qquin_set.add(detail[i][j][0])
 									mysql.update_playername(area, detail[i][j][0], detail[i][j][1], detail[3])
 						except:
 							print ('Exception: '+area+'-'+gameid+' Update Other Player')
