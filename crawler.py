@@ -13,6 +13,8 @@ class Daiwan(object):
 	
 	account = []
 	account_id = 0
+	
+	proxy = {'http': 'http://127.0.0.1:1080'}
 
 	def __init__(self, account_file):
 		fin = open(account_file, 'r')
@@ -57,10 +59,16 @@ class Daiwan(object):
 					self.update_token(self.account[self.account_id][0], self.account[self.account_id][1])
 					headers = {'DAIWAN-API-TOKEN': self.token}
 					ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
-				while (str(ret).startswith('API calls quota exceeded!')):
-					print ("API Waiting CD")
-					time.sleep(60)
-					ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
+				if (str(ret).startswith('API calls quota exceeded!')):
+					ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy).json()
+					while 'msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁'):
+						print ("Invalid Token")
+						self.account_id = (self.account_id+1) % len(self.account)
+						self.update_token(self.account[self.account_id][0], self.account[self.account_id][1])
+						headers = {'DAIWAN-API-TOKEN': self.token}
+						ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy).json()
+				if str(ret).startswith('API calls quota exceeded!') or ('msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁')):
+					continue
 				return ret
 			except:
 				err_time += 1
