@@ -4,11 +4,7 @@
 #include <cmath>
 #include <string>
 #include <cstring>
-#include <vector>
-#include <queue>
-#include <list>
-#include <set>
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
@@ -64,7 +60,7 @@ public:
 	CONNECTION *prev_connection, *next_connection;
 	LAYER();
 	~LAYER();
-	void initialization(map<int, int>*);
+	void initialization(unordered_map<int, int>*);
 	double getval(const int, const int, const int);
 	void setval(const int, const int, const int, const double);
 	void calcoutputdelta(const double*);
@@ -86,7 +82,7 @@ LAYER::~LAYER()
 	if (isdropout != NULL) delete []isdropout;
 }
 
-void LAYER::initialization(map<int, int> *param)
+void LAYER::initialization(unordered_map<int, int> *param)
 {
 	int i;
 	assert(param != NULL);
@@ -147,7 +143,7 @@ public:
 	LAYER *prev_layer, *next_layer;
 	CONNECTION();
 	~CONNECTION();
-	void initialization(map<int, double>*, LAYER*, LAYER*);
+	void initialization(unordered_map<int, double>*, LAYER*, LAYER*);
 	double getweight(const int, const int, const int, const int);
 	void adddw(const int, const int, const int, const int, const double);
 	void weight_initialization(mt19937&);
@@ -182,7 +178,7 @@ CONNECTION::~CONNECTION()
 	if (db != NULL) delete []db;
 }
 
-void CONNECTION::initialization(map<int, double> *param, LAYER *prev, LAYER *next)
+void CONNECTION::initialization(unordered_map<int, double> *param, LAYER *prev, LAYER *next)
 {
 	int i, j;
 	assert(param != NULL && param->find(CONNECTION_TYPE) != param->end());
@@ -294,10 +290,10 @@ class CONVOLUTIONAL_NEURAL_NETWORK
 	void dropout();
 public:
 	CONVOLUTIONAL_NEURAL_NETWORK();
-	CONVOLUTIONAL_NEURAL_NETWORK(map<int, int>*, map<int, double>*, map<int, double>*);
+	CONVOLUTIONAL_NEURAL_NETWORK(unordered_map<int, int>*, unordered_map<int, double>*, unordered_map<int, double>*);
 	CONVOLUTIONAL_NEURAL_NETWORK(ifstream&);
 	~CONVOLUTIONAL_NEURAL_NETWORK();
-	void initialization(map<int, int>*, map<int, double>*, map<int, double>*);
+	void initialization(unordered_map<int, int>*, unordered_map<int, double>*, unordered_map<int, double>*);
 	void initialization(ifstream&);
 	void weight_initialization();
 	void train(const double*, double*, const double*);
@@ -314,14 +310,14 @@ CONVOLUTIONAL_NEURAL_NETWORK::CONVOLUTIONAL_NEURAL_NETWORK()
 	connection = NULL;
 }
 
-CONVOLUTIONAL_NEURAL_NETWORK::CONVOLUTIONAL_NEURAL_NETWORK(map<int, int> *layer_param, map<int, double> *connection_param, map<int, double> *param)
+CONVOLUTIONAL_NEURAL_NETWORK::CONVOLUTIONAL_NEURAL_NETWORK(unordered_map<int, int> *layer_param, unordered_map<int, double> *connection_param, unordered_map<int, double> *param)
 {
 	layer = input_layer = output_layer = NULL;
 	connection = NULL;
 	initialization(layer_param, connection_param, param);
 }
 
-void CONVOLUTIONAL_NEURAL_NETWORK::initialization(map<int, int> *layer_param, map<int, double> *connection_param, map<int, double> *param)
+void CONVOLUTIONAL_NEURAL_NETWORK::initialization(unordered_map<int, int> *layer_param, unordered_map<int, double> *connection_param, unordered_map<int, double> *param)
 {
 	int i;
 	assert(layer_param != NULL && connection_param != NULL && param != NULL && param->find(CNN_TOTAL_LAYER_NUM) != param->end());
@@ -942,7 +938,7 @@ void CONVOLUTIONAL_NEURAL_NETWORK::initialization(ifstream &fin)
 	int i, j, k;
 	for (i = 0; i < total_layer_num; i++)
 	{
-		map<int, int> tmpmap;
+		unordered_map<int, int> tmpmap;
 		int tag, tmpw, tmph, tmpd, tmpsize;
 		fin >> tag;
 		if (tag == 1)
@@ -961,7 +957,7 @@ void CONVOLUTIONAL_NEURAL_NETWORK::initialization(ifstream &fin)
 	}
 	for (i = 0; i < connection_num; i++)
 	{
-		map<int, double> tmpmap;
+		unordered_map<int, double> tmpmap;
 		int tmptype, tmpw, tmps, tmpp;
 		double tmpreluparam, tmpsoftmaxparam;
 		fin >> tmptype >> tmpw >> tmps >> tmpp >> tmpreluparam >> tmpsoftmaxparam;
