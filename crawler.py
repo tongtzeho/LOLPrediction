@@ -288,6 +288,9 @@ def main_loop(area):
 		random.shuffle(qquin_tuple)
 		qquin_tuple = tuple(qquin_tuple)
 		for qquin in qquin_tuple:
+			if (os.path.isfile('exit')):
+				print ('Process '+area+' Exit')
+				return
 			mysql.update_playerinfo(area, qquin, parse_playerinfo(crawler.get_battlesummaryinfo(qquin, area)))
 			normal_gameid = [] # map = 11, type = 3, mode = 1
 			rank_gameid = [] # map = 11, type = 4, mode = 4
