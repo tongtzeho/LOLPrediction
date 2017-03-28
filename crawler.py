@@ -52,21 +52,21 @@ class Daiwan(object):
 		while True:
 			try:
 				headers = {'DAIWAN-API-TOKEN': self.token}
-				ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
+				ret = requests.get(self.BASE_URL+api_url, headers = headers, timeout=30).json()
 				while 'msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁'):
 					print ("Invalid Token")
 					self.account_id = (self.account_id+1) % len(self.account)
 					self.update_token(self.account[self.account_id][0], self.account[self.account_id][1])
 					headers = {'DAIWAN-API-TOKEN': self.token}
-					ret = requests.get(self.BASE_URL+api_url, headers = headers).json()
+					ret = requests.get(self.BASE_URL+api_url, headers = headers, timeout=30).json()
 				if (str(ret).startswith('API calls quota exceeded!')):
-					ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy).json()
+					ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy, timeout=30).json()
 					while 'msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁'):
 						print ("Invalid Token")
 						self.account_id = (self.account_id+1) % len(self.account)
 						self.update_token(self.account[self.account_id][0], self.account[self.account_id][1])
 						headers = {'DAIWAN-API-TOKEN': self.token}
-						ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy).json()
+						ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy, timeout=30).json()
 				if str(ret).startswith('API calls quota exceeded!') or ('msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁')):
 					continue
 				return ret
