@@ -1,3 +1,4 @@
+/*
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -1067,3 +1068,4 @@ void CONVOLUTIONAL_NEURAL_NETWORK::getneuronfromlayer(const int layer_index, dou
 		neuron[i] = layer[layer_index].neuron[i];
 	}
 }
+*/
