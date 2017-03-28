@@ -15,15 +15,15 @@ import gzip
 import sys
 from six.moves import cPickle
 
-from data import *
+from fetcher import *
 
-champion_num = 134
 batch_size = 256
 nb_classes = 2
 nb_epoch = 23
 
-#X_train, y_train, X_test, y_test = read_file_one_side("AramDataSet624.txt", "ChampionList624.txt", champion_num)
-X_train, y_train, X_test, y_test = read_file_both_sides("AramDataSet624.txt", "ChampionList624.txt", champion_num)
+champion_dict = fetch_champion_dict("champion.json")
+champion_num = len(champion_dict)
+X_train, y_train, X_test, y_test = fetch_both_sides("arurf", champion_dict)
 		
 X_train = X_train.astype('int8')
 X_test = X_test.astype('int8')
@@ -35,7 +35,7 @@ Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 model = Sequential()
-model.add(Dense(1500, input_dim = champion_num*2, init='uniform'))
+model.add(Dense(200, input_dim = champion_num*2, init='uniform'))
 model.add(Activation('sigmoid'))
 #model.add(Dense(300))
 #model.add(Activation('sigmoid'))
@@ -59,4 +59,4 @@ score = model.evaluate(X_test, Y_test, verbose=0)
 print('Test score:', score[0])
 print('Test accuracy:', score[1])
 
-model.save('aram_neuralnetwork.h5')
+#model.save('aram_neuralnetwork.h5')
