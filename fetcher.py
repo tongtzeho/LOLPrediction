@@ -63,6 +63,7 @@ def fetch_both_sides(gamemode, champion_dict, train_set_rate=0.75):
 	y_train = np.array(y_train_lst)
 	X_test = np.array(X_test_lst)
 	y_test = np.array(y_test_lst)
+	print ('Success: Fetch Both Sides')
 	return (X_train, y_train, X_test, y_test)
 
 def fetch_one_side(gamemode, champion_dict, train_set_rate=0.75):
@@ -131,4 +132,5 @@ def fetch_one_side(gamemode, champion_dict, train_set_rate=0.75):
 	y_train = np.array(y_train_lst)
 	X_test = np.array(X_test_lst)
 	y_test = np.array(y_test_lst)
+	print ('Success: Fetch One Side')
 	return (X_train, y_train, X_test, y_test)
