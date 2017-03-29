@@ -15,6 +15,7 @@ class Daiwan(object):
 	account_id = 0
 	
 	proxy = {'http': 'http://127.0.0.1:1080'}
+	headers = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
 
 	def __init__(self, account_file):
 		fin = open(account_file, 'r')
@@ -51,7 +52,7 @@ class Daiwan(object):
 		err_time = 0
 		while True:
 			try:
-				headers = {'DAIWAN-API-TOKEN': self.token}
+				headers = {'DAIWAN-API-TOKEN': self.token, 'User-Agent': self.headers}
 				ret = requests.get(self.BASE_URL+api_url, headers = headers, timeout=30).json()
 				while 'msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁'):
 					print ("Invalid Token")
