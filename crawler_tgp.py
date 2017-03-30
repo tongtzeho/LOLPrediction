@@ -69,7 +69,10 @@ class Daiwan(object):
 						headers = {'DAIWAN-API-TOKEN': self.token}
 						ret = requests.get(self.BASE_URL+api_url, headers = headers, proxies=self.proxy, timeout=30).json()
 				if str(ret).startswith('API calls quota exceeded!') or ('msg' in ret and ret['msg'].startswith('令牌信息已经无效或已经被销毁')):
+					print ("Exception: Waiting")
+					time.sleep(5)
 					continue
+				time.sleep(1)
 				return ret
 			except:
 				err_time += 1
@@ -101,12 +104,13 @@ class MySQL(object):
 	port = 3306
 	user = ''
 	password = ''
-	database = 'lol_prediction'
+	database = ''
 	charset = 'utf8'
 	
-	def __init__(self, user, password):
+	def __init__(self, user, password, database):
 		self.user = user
 		self.password = password
+		self.database = database
 		
 	def connect(self):
 		try:
@@ -281,7 +285,7 @@ def parse_gamedetail(game_detail):
 		return None
 		
 def main_loop(area):
-	mysql = MySQL('root', 'pkuoslab')
+	mysql = MySQL('root', 'pkuoslab', 'lol_prediction_tgp')
 	qquin_set = mysql.get_qquin(area)
 	crawler = Daiwan('Account.txt')
 	while len(qquin_set):
@@ -308,10 +312,11 @@ def main_loop(area):
 							expire = True
 							break
 						if battle['battle_time'] <= end_time:
-							if battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 1: normal_gameid.append(str(battle['game_id']))
-							elif battle['battle_map'] == 11 and battle['game_type'] == 4 and battle['game_mode'] == 4: rank_gameid.append(str(battle['game_id']))
-							elif battle['battle_map'] == 12 and battle['game_type'] == 6 and battle['game_mode'] == 6: aram_gameid.append(str(battle['game_id']))
-							elif battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 24: arurf_gameid.append(str(battle['game_id']))
+							if battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 24: arurf_gameid.append(str(battle['game_id']))
+							#if battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 1: normal_gameid.append(str(battle['game_id']))
+							#elif battle['battle_map'] == 11 and battle['game_type'] == 4 and battle['game_mode'] == 4: rank_gameid.append(str(battle['game_id']))
+							#elif battle['battle_map'] == 12 and battle['game_type'] == 6 and battle['game_mode'] == 6: aram_gameid.append(str(battle['game_id']))
+							#elif battle['battle_map'] == 11 and battle['game_type'] == 3 and battle['game_mode'] == 24: arurf_gameid.append(str(battle['game_id']))
 					if expire: break
 					page += 1
 				except:
