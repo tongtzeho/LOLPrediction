@@ -17,20 +17,21 @@ class RiotAPI(object):
 		while err_time < 100:
 			try:
 				if err_time % 2 == 0:
-					r = requests.get(api_url+'?api_key='+self.key, timeout=30)
+					r = requests.get(api_url+'?api_key='+self.key, timeout=20)
 				else:
-					r = requests.get(api_url+'?api_key='+self.key, proxies=self.proxy, timeout=30)
-				if r.status_code in (404, 400, 500, 429, 503, 401, 403):
+					r = requests.get(api_url+'?api_key='+self.key, proxies=self.proxy, timeout=20)
+				status_code = r.status_code
+				if status_code in (404, 400, 500, 429, 503, 401, 403):
 					err_time += 1
-					print ("Exception: Status Code = "+str(r.status_code))
+					print ("Exception: Status Code = "+str(status_code))
 					time.sleep(2)
 					continue
 				else:
-					time.sleep(1)
+					time.sleep(0.75)
 					return r.json()
 			except:
 				err_time += 1
-				print ("Exception: Status Code = "+str(r.status_code))
+				print ("Exception: Internet Error")
 				time.sleep(2)
 				continue
 	
@@ -213,12 +214,13 @@ def main_loop(region, key, rate):
 			try:
 				if random.random() < rate:
 					gamedict = parse_recentgame(crawler.get_recentgame(str(summonerid)))
-					for gameid, gameinfo in gamedict.items():
-						if mysql.search_game(region, gameid) == 0:
-							mysql.update_game(region, gameid, gameinfo)
-						if gameinfo != None and gameinfo[8] != None:
-							for summonerid in gameinfo[8]:
-								mysql.update_summonerid(region, summonerid)
+					if len(gamedict):
+						for gameid, gameinfo in gamedict.items():
+							if mysql.search_game(region, gameid) == 0:
+								mysql.update_game(region, gameid, gameinfo)
+							if gameinfo != None and gameinfo[8] != None and len(gameinfo[8]):
+								for summonerid in gameinfo[8]:
+									mysql.update_summonerid(region, summonerid)
 			except:
 				print ('Exception: Unknown Error')
 				continue

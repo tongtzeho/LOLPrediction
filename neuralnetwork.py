@@ -19,11 +19,11 @@ from fetcher import *
 
 batch_size = 256
 nb_classes = 2
-nb_epoch = 23
+nb_epoch = 30
 
 champion_dict = fetch_champion_dict("champion.json")
 champion_num = len(champion_dict)
-X_train, y_train, X_test, y_test = fetch_both_sides("arurf", champion_dict)
+X_train, y_train, X_test, y_test = fetch_both_sides_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1490371200000', '1800371200000'), champion_dict)
 		
 X_train = X_train.astype('int8')
 X_test = X_test.astype('int8')
@@ -35,7 +35,7 @@ Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 model = Sequential()
-model.add(Dense(200, input_dim = champion_num*2, init='uniform'))
+model.add(Dense(500, input_dim = champion_num*2, init='uniform'))
 model.add(Activation('sigmoid'))
 #model.add(Dense(300))
 #model.add(Activation('sigmoid'))
