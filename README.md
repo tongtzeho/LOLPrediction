@@ -1,13 +1,11 @@
 ## 英雄联盟对局数据下载和胜负预测
 
-### 数据下载方式：
+### 数据下载方式
 
 ##### 国服
-
 DaiWan游戏平台提供的腾讯游戏平台（TGP）接口（http://www.games-cube.com/）
 
 ##### 外服（美/西欧/韩）
-
 Riot开发者平台API（https://developer.riotgames.com/）
 
 ### 已有数据
