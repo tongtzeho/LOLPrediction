@@ -1,4 +1,4 @@
-CREATE TABLE Player (
+CREATE TABLE player (
 	area TINYINT NOT NULL,
 	qquin VARCHAR(28) NOT NULL,
 	name VARCHAR(40),
@@ -10,7 +10,7 @@ CREATE TABLE Player (
 	PRIMARY KEY (area, qquin)
 );
 
-CREATE TABLE Game_Rank (
+CREATE TABLE game_rank (
 	area TINYINT NOT NULL,
 	gameid BIGINT NOT NULL,
 	starttime VARCHAR(21) NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE Game_Rank (
 	PRIMARY KEY (area, gameid)
 );
 
-CREATE TABLE Game_Normal (
+CREATE TABLE game_normal (
 	area TINYINT NOT NULL,
 	gameid BIGINT NOT NULL,
 	starttime VARCHAR(21) NOT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE Game_Normal (
 	PRIMARY KEY (area, gameid)
 );
 
-CREATE TABLE Game_ARAM (
+CREATE TABLE game_aram (
 	area TINYINT NOT NULL,
 	gameid BIGINT NOT NULL,
 	starttime VARCHAR(21) NOT NULL,
@@ -214,7 +214,7 @@ CREATE TABLE Game_ARAM (
 	PRIMARY KEY (area, gameid)
 );
 
-CREATE TABLE Game_ARURF (
+CREATE TABLE game_arurf (
 	area TINYINT NOT NULL,
 	gameid BIGINT NOT NULL,
 	starttime VARCHAR(21) NOT NULL,
@@ -282,13 +282,13 @@ CREATE TABLE Game_ARURF (
 	PRIMARY KEY (area, gameid)
 );
 
-INSERT INTO Player (area, qquin) VALUES (1, 'U4980634455721087891');
-INSERT INTO Player (area, qquin) VALUES (1, 'U7050798250198252147');
-INSERT INTO Player (area, qquin) VALUES (1, 'U11219317167807169527');
+INSERT INTO player (area, qquin) VALUES (1, 'U4980634455721087891');
+INSERT INTO player (area, qquin) VALUES (1, 'U7050798250198252147');
+INSERT INTO player (area, qquin) VALUES (1, 'U11219317167807169527');
 
-INSERT INTO Player (area, qquin) VALUES (14, 'U5399885551529785657');
-INSERT INTO Player (area, qquin) VALUES (14, 'U8189918657392640773');
-INSERT INTO Player (area, qquin) VALUES (14, 'U9173806975303603772');
+INSERT INTO player (area, qquin) VALUES (14, 'U5399885551529785657');
+INSERT INTO player (area, qquin) VALUES (14, 'U8189918657392640773');
+INSERT INTO player (area, qquin) VALUES (14, 'U9173806975303603772');
 
-INSERT INTO Player (area, qquin) VALUES (20, 'U6894554802621839420');
-INSERT INTO Player (area, qquin) VALUES (20, 'U4211931464789574704');
+INSERT INTO player (area, qquin) VALUES (20, 'U6894554802621839420');
+INSERT INTO player (area, qquin) VALUES (20, 'U4211931464789574704');
