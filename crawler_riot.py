@@ -27,7 +27,6 @@ class RiotAPI(object):
 					time.sleep(2)
 					continue
 				else:
-					time.sleep(0.75)
 					return r.json()
 			except:
 				err_time += 1
