@@ -1,22 +1,22 @@
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression
-from sklearn import svm
 from fetcher import *
 champion_dict = fetch_champion_dict("champion.json")
 champion_num = len(champion_dict)
 
+#X_train, y_train, X_test, y_test = read_file_one_side_old('AramDataSet38W.txt', 'ChampionList624.txt', 134)
+#X_train, y_train, X_test, y_test = read_file_one_side('AramDataSet624.txt', 'ChampionList624.txt', 134)
 #X_train, y_train, X_test, y_test = fetch_one_side_tgp('arurf', champion_dict)
-#X_train, y_train, X_test, y_test = fetch_one_side_tgp('rank', champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('11', 'MATCHED_GAME', 'NORMAL', 'CLASSIC', ('1490371200000', '1800371200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('11', 'MATCHED_GAME', 'RANKED_SOLO_5x5', 'CLASSIC', ('1490371200000', '1800371200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1490371200000', '1800371200000'), champion_dict)
 
+#X_train, y_train, X_test, y_test = read_file_both_sides_old('AramDataSet38W.txt', 'ChampionList624.txt', 134)
+X_train, y_train, X_test, y_test = read_file_both_sides('AramDataSet624.txt', 'ChampionList624.txt', 134)
 #X_train, y_train, X_test, y_test = fetch_both_sides_tgp('arurf', champion_dict)
-#X_train, y_train, X_test, y_test = fetch_both_sides_tgp('rank', champion_dict)
 #X_train, y_train, X_test, y_test = fetch_both_sides_riot('11', 'MATCHED_GAME', 'NORMAL', 'CLASSIC', ('1490371200000', '1800371200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_both_sides_riot('11', 'MATCHED_GAME', 'RANKED_SOLO_5x5', 'CLASSIC', ('1490371200000', '1800371200000'), champion_dict)
-X_train, y_train, X_test, y_test = fetch_both_sides_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1490371200000', '1800371200000'), champion_dict)
+#X_train, y_train, X_test, y_test = fetch_both_sides_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1490371200000', '1800371200000'), champion_dict)
 
 clf = LogisticRegression()
 clf.fit(X_train, y_train)
