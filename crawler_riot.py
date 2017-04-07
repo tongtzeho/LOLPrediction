@@ -1,8 +1,5 @@
 import pymysql, random, requests, json, time, re, multiprocessing, os, datetime
 
-start_time = "2017-03-01 00:00:00"
-end_time = "2017-03-16 00:00:00"
-
 class RiotAPI(object):
 	key = ""
 	region = ""
