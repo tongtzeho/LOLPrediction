@@ -21,7 +21,7 @@ batch_size = 256
 nb_classes = 2
 nb_epoch = 100
 
-champion_dict = fetch_champion_dict("champion.json")
+champion_dict = fetch_champion_dict("champion136.json")
 champion_num = len(champion_dict)
 
 #X_train, y_train, X_test, y_test = read_file_one_side_old('AramDataSet38W.txt', 'ChampionList624.txt', 134)
@@ -34,8 +34,11 @@ champion_num = len(champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('11', 'MATCHED_GAME', 'RANKED_SOLO_5x5', 'CLASSIC', ('1491451200000', '1492531200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('11', 'MATCHED_GAME', 'RANKED_FLEX_SR', 'CLASSIC', ('1491451200000', '1492531200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('11', 'MATCHED_GAME', 'NORMAL', 'CLASSIC', ('1491451200000', '1492531200000'), champion_dict)
-X_train, y_train, X_test, y_test = fetch_one_side_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1491451200000', '1492531200000'), champion_dict)
+#X_train, y_train, X_test, y_test = fetch_one_side_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1491451200000', '1492531200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_one_side_riot('11', 'MATCHED_GAME', 'ARSR', 'ARSR', ('1491451200000', '1492531200000'), champion_dict)
+
+#X_train, y_train, X_test, y_test = fetch_one_side_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1492660800000', '1493740800000'), champion_dict)
+X_train, y_train, X_test, y_test = fetch_one_side_riot('12', 'MATCHED_GAME', 'KING_PORO', 'KINGPORO', ('1492660800000', '1493740800000'), champion_dict)
 
 #X_train, y_train, X_test, y_test = read_file_both_sides_old('AramDataSet38W.txt', 'ChampionList624.txt', 134)
 #X_train, y_train, X_test, y_test = read_file_both_sides('AramDataSet624.txt', 'ChampionList624.txt', 134)
@@ -49,6 +52,9 @@ X_train, y_train, X_test, y_test = fetch_one_side_riot('12', 'MATCHED_GAME', 'AR
 #X_train, y_train, X_test, y_test = fetch_both_sides_riot('11', 'MATCHED_GAME', 'NORMAL', 'CLASSIC', ('1491451200000', '1492531200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_both_sides_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1491451200000', '1492531200000'), champion_dict)
 #X_train, y_train, X_test, y_test = fetch_both_sides_riot('11', 'MATCHED_GAME', 'ARSR', 'ARSR', ('1491451200000', '1492531200000'), champion_dict)
+
+#X_train, y_train, X_test, y_test = fetch_both_sides_riot('12', 'MATCHED_GAME', 'ARAM_UNRANKED_5x5', 'ARAM', ('1492660800000', '1493740800000'), champion_dict)
+#X_train, y_train, X_test, y_test = fetch_both_sides_riot('12', 'MATCHED_GAME', 'KING_PORO', 'KINGPORO', ('1492660800000', '1493740800000'), champion_dict)
 		
 X_train = X_train.astype('int8')
 X_test = X_test.astype('int8')
